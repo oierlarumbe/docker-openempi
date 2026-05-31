@@ -93,8 +93,6 @@ docker compose restart openempi
 # Entrar a la shell de un contenedor
 docker compose exec openempi bash
 docker compose exec orientdb bash
-docker compose exec postgres psql -U openempi
-
 # Ver uso de recursos
 docker stats
 ```
@@ -107,20 +105,10 @@ Los datos se guardan en volúmenes Docker con nombre, que sobreviven a reinicios
 
 | Volumen | Contenido |
 |---------|-----------|
-| `openempi_postgres_data` | Base de datos PostgreSQL de OpenEMPI |
 | `openempi_orientdb_databases` | Bases de datos de OrientDB (enlaces de matching) |
 | `openempi_orientdb_backup` | Backups de OrientDB |
 | `openempi_logs` | Logs de la aplicación OpenEMPI |
 
-Para hacer un backup manual de PostgreSQL:
-```powershell
-docker compose exec postgres pg_dump -U openempi openempi > backup.sql
-```
-
-Para restaurar:
-```powershell
-Get-Content backup.sql | docker compose exec -T postgres psql -U openempi openempi
-```
 
 ---
 
@@ -133,10 +121,9 @@ dir C:\ruta\docker-openempi\openempi\app\
 # Deberías ver: bin/, conf/, lib/, etc.
 ```
 
-### Error de conexión a PostgreSQL o a OrientDB
+### Error de conexión  a OrientDB
 Los contenedores tienen healthchecks que hacen que OpenEMPI espere a que las bases de datos estén listas. Si el error persiste, revisa los logs:
 ```powershell
-docker compose logs postgres
 docker compose logs orientdb
 ```
 
