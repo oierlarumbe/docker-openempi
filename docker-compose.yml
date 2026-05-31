@@ -1,0 +1,72 @@
+# ============================================================
+# OpenEMPI 3.5.0c + OrientDB
+# docker-compose.yml
+# ============================================================
+#
+# Para arrancar:   docker compose up -d
+# Para parar:      docker compose down
+# Para ver logs:   docker compose logs -f
+# Para destruir:   docker compose down -v   (borra volúmenes)
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # OrientDB – base de datos de grafos (enlaces de matching)
+  # ----------------------------------------------------------
+  orientdb:
+    build:
+      context: ./orientdb
+      dockerfile: Dockerfile
+    container_name: openempi_orientdb
+    restart: unless-stopped
+    environment:
+      ORIENTDB_ROOT_PASSWORD: openempi
+    volumes:
+      - orientdb_databases:/opt/orientdb/databases
+      - orientdb_backup:/opt/orientdb/backup
+    ports:
+      - "2424:2424"         # protocolo binario
+      - "2480:2480"         # consola web  →  http://localhost:2480
+    networks:
+      - openempi_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:2480 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+
+  # ----------------------------------------------------------
+  # OpenEMPI 3.5.0c
+  # Usa H2 como base de datos relacional embebida
+  # ----------------------------------------------------------
+  openempi:
+    build:
+      context: ./openempi
+      dockerfile: Dockerfile
+    container_name: openempi_app
+    restart: unless-stopped
+    depends_on:
+      orientdb:
+        condition: service_started
+    volumes:
+      - openempi_logs:/opt/openempi/logs
+    ports:
+      - "8080:8080"         # consola web  →  http://localhost:8080/openempi-admin
+    networks:
+      - openempi_net
+
+# ----------------------------------------------------------
+# Volúmenes (persistencia entre reinicios)
+# ----------------------------------------------------------
+volumes:
+  orientdb_databases:
+  orientdb_backup:
+  openempi_logs:
+
+# ----------------------------------------------------------
+# Red interna
+# ----------------------------------------------------------
+networks:
+  openempi_net:
+    driver: bridge
