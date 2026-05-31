@@ -1,165 +1,113 @@
-# OpenEMPI 3.5.0c + OrientDB – Entorno Docker
+# OpenEMPI 3.5.0c + OrientDB — Entorno Docker
+
+Despliegue contenerizado de OpenEMPI 3.5.0c con OrientDB como base de datos de grafos para la gestión de enlaces de matching.
+
+## Arquitectura
+
+```
+┌─────────────────────────────────────────┐
+│           Docker Compose                │
+│                                         │
+│  ┌──────────────┐   ┌────────────────┐  │
+│  │   openempi   │──▶│   orientdb     │  │
+│  │  Tomcat 8    │   │   v2.2.17      │  │
+│  │  JDK 8       │   │                │  │
+│  │  H2 (embed.) │   │                │  │
+│  └──────────────┘   └────────────────┘  │
+│   :8080                :2424 / :2480    │
+└─────────────────────────────────────────┘
+```
+
+- **openempi**: Tomcat 8 + OpenEMPI 3.5.0c sobre Ubuntu 20.04 con JDK 8. Usa H2 como base de datos relacional embebida.
+- **orientdb**: OrientDB 2.2.17 para la persistencia de los enlaces de matching.
+
+## Requisitos
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y en ejecución.
+- No se requiere ninguna instalación adicional.
+
+## Instalación rápida
+
+**1. Descarga el ZIP completo** desde la sección [Releases](../../releases) de este repositorio.
+
+**2. Descomprime** en cualquier carpeta, por ejemplo `C:\docker-openempi\`
+
+**3. Arranca los contenedores:**
+```powershell
+cd C:\docker-openempi
+docker compose up -d
+```
+
+**4. Accede a OpenEMPI** en el navegador:
+```
+http://localhost:8080/openempi-admin
+```
+Credenciales: `admin` / `admin`
+
+**5. Accede a la consola de OrientDB** (opcional):
+```
+http://localhost:2480
+```
+Credenciales: `root` / `openempi`
+
+---
 
 ## Estructura del proyecto
 
 ```
 docker-openempi/
-├── docker-compose.yml          ← orquestación de los 3 servicios
+├── docker-compose.yml          ← orquestación de los servicios
+├── .gitignore
+├── README.md
 ├── openempi/
 │   ├── Dockerfile
 │   ├── entrypoint.sh
-│   └── app/                    ← pon aquí el contenido de C:\openempi
+│   └── app/                    ← instalación de OpenEMPI (incluida en el ZIP del release)
 ├── orientdb/
 │   ├── Dockerfile
 │   ├── entrypoint.sh
-│   └── app/                    ← pon aquí el contenido de tu carpeta orientdb
-└── README.md
+│   └── app/                    ← instalación de OrientDB (incluida en el ZIP del release)
+└── k8s/
+    ├── openempi-deployment.yaml
+    └── orientdb-deployment.yaml
 ```
 
----
-
-## Paso 1 – Preparar los ficheros fuente
-
-Antes de construir las imágenes, copia tus instalaciones locales dentro del proyecto:
-
-### OpenEMPI
-```powershell
-# En PowerShell (Windows)
-xcopy /E /I C:\openempi\* C:\ruta\docker-openempi\openempi\app\
-```
-O simplemente copia la carpeta `C:\openempi` dentro de `docker-openempi/openempi/` y renómbrala `app`.
-
-### OrientDB
-```powershell
-xcopy /E /I "C:\Users\Oier\OneDrive\Escritorio\orientdb\*" C:\ruta\docker-openempi\orientdb\app\
-```
-O copia tu carpeta `orientdb` dentro de `docker-openempi/orientdb/` y renómbrala `app`.
-
----
-
-## Paso 2 – Construir y arrancar
-
-Abre Docker Desktop y asegúrate de que está en ejecución. Luego, en PowerShell:
+## Comandos útiles
 
 ```powershell
-cd C:\ruta\docker-openempi
-
-# Construir las imágenes (solo la primera vez, o cuando cambies algo)
-docker compose build
-
-# Arrancar todos los servicios en segundo plano
-docker compose up -d
-```
-
----
-
-## Paso 3 – Verificar que todo arranca
-
-```powershell
-# Ver el estado de los contenedores
+# Ver estado de los contenedores
 docker compose ps
 
-# Ver los logs en tiempo real (Ctrl+C para salir)
+# Ver logs en tiempo real
 docker compose logs -f
 
 # Ver logs de un servicio concreto
 docker compose logs -f openempi
 docker compose logs -f orientdb
-docker compose logs -f postgres
-```
 
----
-
-## Acceso a las interfaces
-
-| Servicio | URL / Conexión | Credenciales |
-|----------|---------------|--------------|
-| OpenEMPI (consola web) | http://localhost:8080/openempi-web-resources | admin / admin |
-| OrientDB (consola web) | http://localhost:2480 | root / admin |
----
-
-## Comandos útiles
-
-```powershell
 # Parar los servicios (sin borrar datos)
 docker compose down
 
-# Parar y borrar TODOS los datos (volúmenes)
+# Parar y borrar todos los datos
 docker compose down -v
 
-# Reiniciar un servicio concreto
+# Reiniciar un servicio
 docker compose restart openempi
 
 # Entrar a la shell de un contenedor
 docker compose exec openempi bash
 docker compose exec orientdb bash
-# Ver uso de recursos
-docker stats
 ```
-
----
 
 ## Persistencia de datos
 
-Los datos se guardan en volúmenes Docker con nombre, que sobreviven a reinicios:
+Los datos se guardan en volúmenes Docker con nombre que sobreviven a reinicios:
 
 | Volumen | Contenido |
 |---------|-----------|
-| `openempi_orientdb_databases` | Bases de datos de OrientDB (enlaces de matching) |
-| `openempi_orientdb_backup` | Backups de OrientDB |
-| `openempi_logs` | Logs de la aplicación OpenEMPI |
-
-
----
-
-## Solución de problemas frecuentes
-
-### OpenEMPI no arranca / no encuentra el script de inicio
-Comprueba que la carpeta `openempi/app/` contiene el contenido correcto:
-```powershell
-dir C:\ruta\docker-openempi\openempi\app\
-# Deberías ver: bin/, conf/, lib/, etc.
-```
-
-### Error de conexión  a OrientDB
-Los contenedores tienen healthchecks que hacen que OpenEMPI espere a que las bases de datos estén listas. Si el error persiste, revisa los logs:
-```powershell
-docker compose logs orientdb
-```
-
-### Puerto 8080 ya en uso
-Si tienes OpenEMPI corriendo en local, para el servicio de Windows antes de arrancar Docker, o cambia el puerto en `docker-compose.yml`:
-```yaml
-ports:
-  - "9090:8080"   # OpenEMPI accesible en localhost:9090
-```
-
-### Reconstruir una imagen tras cambios
-```powershell
-docker compose build openempi --no-cache
-docker compose up -d openempi
-```
-
----
-
-## Para compartir el entorno
-
-Para que otra persona pueda reproducir este entorno exactamente:
-
-1. Comprime la carpeta `docker-openempi/` completa (incluyendo `app/` dentro de `openempi/` y `orientdb/`).
-2. El destinatario solo necesita tener **Docker Desktop** instalado.
-3. Ejecuta `docker compose up -d` y listo.
-
-Si quieres evitar copiar los ficheros de la app, puedes publicar las imágenes en Docker Hub:
-```powershell
-docker compose build
-docker tag openempi_app tuusuario/openempi:3.5.0c
-docker tag openempi_orientdb tuusuario/orientdb-openempi:latest
-docker push tuusuario/openempi:3.5.0c
-docker push tuusuario/orientdb-openempi:latest
-```
-
----
+| `docker-openempi_orientdb_databases` | Bases de datos de OrientDB (enlaces de matching) |
+| `docker-openempi_orientdb_backup` | Backups de OrientDB |
+| `docker-openempi_openempi_logs` | Logs de la aplicación |
 
 ## Despliegue en Kubernetes (Minikube)
 
@@ -169,47 +117,61 @@ docker push tuusuario/orientdb-openempi:latest
 
 ### Pasos
 
-**1. Iniciar Minikube:**
 ```powershell
+# 1. Iniciar Minikube
 minikube start
-```
 
-**2. Apuntar Docker al registro de Minikube (para usar imágenes locales):**
-```powershell
+# 2. Apuntar Docker al registro de Minikube
 minikube docker-env | Invoke-Expression
-```
 
-**3. Construir las imágenes dentro del contexto de Minikube:**
-```powershell
+# 3. Construir las imágenes dentro del contexto de Minikube
 docker build -t openempi-orientdb:latest ./orientdb
 docker build -t openempi-app:latest ./openempi
-```
 
-**4. Aplicar los manifiestos de Kubernetes:**
-```powershell
+# 4. Aplicar los manifiestos
 kubectl apply -f k8s/orientdb-deployment.yaml
 kubectl apply -f k8s/openempi-deployment.yaml
-```
 
-**5. Verificar que los pods están corriendo:**
-```powershell
+# 5. Verificar pods
 kubectl get pods
 kubectl get services
-```
 
-**6. Acceder a OpenEMPI:**
-```powershell
+# 6. Abrir OpenEMPI en el navegador
 minikube service openempi
-```
-Esto abrirá automáticamente el navegador en la URL correcta.
 
-**7. Ver logs de un pod:**
-```powershell
+# 7. Ver logs
 kubectl logs deployment/openempi -f
-kubectl logs deployment/orientdb -f
-```
 
-**8. Eliminar el despliegue:**
-```powershell
+# 8. Eliminar el despliegue
 kubectl delete -f k8s/
 ```
+
+## Solución de problemas
+
+### El contenedor openempi no arranca
+```powershell
+docker compose logs openempi
+```
+
+### OrientDB no acepta conexiones
+Espera 15-20 segundos tras el arranque. OrientDB tarda en inicializarse.
+
+### Puerto 8080 ya en uso
+Cambia el puerto en `docker-compose.yml`:
+```yaml
+ports:
+  - "9090:8080"
+```
+
+---
+
+## Tecnologías utilizadas
+
+- Docker / Docker Compose
+- OpenEMPI 3.5.0c
+- Apache Tomcat 8.0.44
+- OrientDB 2.2.17
+- H2 Database (embebida)
+- Ubuntu 20.04
+- OpenJDK 8
+- Kubernetes / Minikube
