@@ -64,12 +64,9 @@ docker-openempi/
 │   ├── entrypoint.sh
 │   └── app/                    ← instalación de OpenEMPI (incluida en el ZIP del release)
 ├── orientdb/
-│   ├── Dockerfile
-│   ├── entrypoint.sh
-│   └── app/                    ← instalación de OrientDB (incluida en el ZIP del release)
-└── k8s/
-    ├── openempi-deployment.yaml
-    └── orientdb-deployment.yaml
+    ├── Dockerfile
+    ├── entrypoint.sh
+    └── app/                    ← instalación de OrientDB (incluida en el ZIP del release)
 ```
 
 ## Comandos útiles
