@@ -76,8 +76,6 @@ docker compose logs -f postgres
 |----------|---------------|--------------|
 | OpenEMPI (consola web) | http://localhost:8080/openempi-web-resources | admin / admin |
 | OrientDB (consola web) | http://localhost:2480 | root / admin |
-| PostgreSQL | localhost:5432 | openempi / openempi |
-
 ---
 
 ## Comandos útiles
