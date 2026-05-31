@@ -109,42 +109,6 @@ Los datos se guardan en volúmenes Docker con nombre que sobreviven a reinicios:
 | `docker-openempi_orientdb_backup` | Backups de OrientDB |
 | `docker-openempi_openempi_logs` | Logs de la aplicación |
 
-## Despliegue en Kubernetes (Minikube)
-
-### Requisitos
-- [Minikube](https://minikube.sigs.k8s.io/docs/start/) instalado
-- [kubectl](https://kubernetes.io/docs/tasks/tools/) instalado
-
-### Pasos
-
-```powershell
-# 1. Iniciar Minikube
-minikube start
-
-# 2. Apuntar Docker al registro de Minikube
-minikube docker-env | Invoke-Expression
-
-# 3. Construir las imágenes dentro del contexto de Minikube
-docker build -t openempi-orientdb:latest ./orientdb
-docker build -t openempi-app:latest ./openempi
-
-# 4. Aplicar los manifiestos
-kubectl apply -f k8s/orientdb-deployment.yaml
-kubectl apply -f k8s/openempi-deployment.yaml
-
-# 5. Verificar pods
-kubectl get pods
-kubectl get services
-
-# 6. Abrir OpenEMPI en el navegador
-minikube service openempi
-
-# 7. Ver logs
-kubectl logs deployment/openempi -f
-
-# 8. Eliminar el despliegue
-kubectl delete -f k8s/
-```
 
 ## Solución de problemas
 
@@ -174,4 +138,3 @@ ports:
 - H2 Database (embebida)
 - Ubuntu 20.04
 - OpenJDK 8
-- Kubernetes / Minikube
